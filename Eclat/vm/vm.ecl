@@ -1,17 +1,18 @@
 (* le type des instructions de la VM *)
-type instr = I_GALLOC of unit 
-           | I_GSTORE of ptr
-           | I_GFETCH of ptr
-           | I_STORE of ptr
-           | I_FETCH of ptr
-           | I_PUSH of value
-           | I_PUSH_FUN of ptr
-           | I_POP of unit
-           | I_CALL of long (* arity *)
-           | I_RETURN of unit
-           | I_JUMP of ptr
-           | I_JTRUE of ptr
-           | I_JFALSE of ptr
+type instr = 
+  I_GALLOC of unit 
+  | I_GSTORE of ptr
+  | I_GFETCH of ptr
+  | I_STORE of ptr
+  | I_FETCH of ptr
+  | I_PUSH of value
+  | I_PUSH_FUN of ptr
+  | I_POP of unit
+  | I_CALL of long (* arity *)
+  | I_RETURN of unit
+  | I_JUMP of ptr
+  | I_JTRUE of ptr
+  | I_JFALSE of ptr
 
 (* l'état de la VM comprend (dans l'ordre) :
    - un bloc d'activation
@@ -36,60 +37,40 @@ let print_vm_state ((frame,gp,hp,_,_):vm_state) : unit =
 (* exécution d'une instruction du programme, le [pc] 
    courrant est dans l'état de la VM (state) *)
 let vm_run_instr (state : vm_state) : vm_state =
-  let (frame,gp,hp,write_buf,finished) = state in
+  let (frame,gp,hp,wb,finished) = state in
   let (sp,env,pc,fp) = frame in
   let instr = code.(pc) in
   
-  match instr with
-  
-    I_GALLOC () -> 
-      if gp >= globals_limit
-        then fatal_error("Too much global variables.")
-      else state
-      
-  (* | I_GSTORE p -> 
-      globals.(gp) <- p ;
-      (frame, gp+1, hp, write_buf, finished) *)
-  
-  (*
-  | I_GFETCH p -> ()
-  | I_STORE i -> ()
-  | I_FETCH i -> ()
-  *)
-  
-  | I_PUSH v -> 
-    stack.(sp) <- v; 
-    ((sp+1, env, pc, fp), frame, gp, hp, write_buf, finished)
-  (*
-  | I_PUSH_FUN p -> () 
-  *)
-  | I_POP () -> 
-    let v = stack.(sp-1) in
-    if sp-1 == 0
-    else ((sp-1, env, pc, fp), frame, gp, hp, write_buf, finished)
-    then print_int v; print_newline (); exit()
-  (*
-  | I_CALL l -> ()
-  | I_RETURN () -> ()
-  | I_JUMP p -> ()
-  | I_JTRUE p -> ()
-  | I_JFALSE p -> () 
-  *)
-  | _ -> print_string "Instruction not implemented yet"; print_newline (); state
-  end
-  
-  print_string "work in progress :-)";
-  print_newline ();
-  
-  exit () ;;
+  if (finished) then
+    (print_int v; print_newline (); exit ())
+  else
+    match instr with
+      | I_GALLOC u ->
+          if gp+1 > global_size then fatal_error("Globals memory full")
+          else (frame, gp+1, hp, wb, finished)
+      | I_GSTORE p -> (globals.(gp) <- p; (frame, gp+1, hp, write_buf, finished))
+      | I_GFETCH p -> (globale)
+      | I_STORE p -> (j)
+      | I_FETCH p -> ()
+      | I_PUSH v -> stack.(sp) <- v; (((sp+1), env, pc+1, fp), gp, hp write_buf, finished)
+      (* | I_PUSH_FUN p -> () *)
+      | I_POP () ->
+        let r = stack.(sp-1) in
+        if sp-1 = 0 then (frame, gp, hp, write_buf, true)
+        else (((sp-1), env, pc+1, fp), gp, hp write_buf, finished)
+      | _ -> fatal_error("Not implemented")
+      (* | I_CALL l (* arity *) -> ()
+      | I_RETURN () -> ()
+      | I_JUMP p -> ()
+      | I_JTRUE p -> ()
+      | I_JFALSE p -> () *)
+    end
+;;
 
 (* exécution d'un programme (stocké dans le tableau global [bytecode] *)
 let rec vm_run_code ((state,debug) : vm_state * bool) : unit =
-  
   (if debug then print_vm_state state else ()); (* affichage de l'état de la VM *)
-  
   let (frame,gp,hp,write_buf,finished) = vm_run_instr(state) in
-  
   if finished then () else 
   let (sp,env,pc,fp) = frame in
   let next_pc = pc+1 in

@@ -130,7 +130,7 @@ type_alias: /* todo: avoid side effect, which depends on the left-to-right evalu
 | TYPE x=IDENT EQ ty=ty SEMI_SEMI? { add_alias x ty (with_file $loc) }
 
 typ_sum:
-| TYPE x=IDENT EQ PIPE? ts=separated_nonempty_list(PIPE,ty_case) SEMI_SEMI? 
+| TYPE x=IDENT EQ ts=separated_nonempty_list(PIPE,ty_case) SEMI_SEMI? 
    { add_alias x (T_sum ts) (with_file $loc);
      x,ts }
 
@@ -275,7 +275,6 @@ exp_desc:
         }
 | e=lexp {e}
 
-
 arg_ty_unparen:
 | p=pat { p, None }
 | p=apat COL ty=aty  {p, Some ty}
@@ -392,7 +391,7 @@ app_exp_desc:
         { let e2 = mk_loc (with_file $loc) @@ E_const (Bool true) in
           E_if(e1,e2,e3)
         }
-| REGISTER ev=avalue LAST e0=aexp
+| REGISTER ev=exp LAST e0=aexp
        { match un_annot ev with
          | E_fun(p,e1) -> E_reg((p,e1),e0,Ast.gensym ())
          | _ -> Prelude.Errors.raise_error ~loc:(with_file $loc)
@@ -409,7 +408,27 @@ app_exp_desc:
   { let z = Ast.gensym () in
     E_generate((P_var z,E_app(ef1,E_var z)),e_init2,e_st3,with_file $loc) }
 
+| EXEC e1=exp 
+    {
+        Prelude.Errors.raise_error ~loc:(with_file $loc)
+            ~msg:"missing ``default'' close; `exec e default e` expected" ()
+    }
+| EXEC e1=exp DEFAULT
+    {
+        Prelude.Errors.raise_error ~loc:(with_file $loc)
+            ~msg:"missing expression after keyword ``default''; `exec e default e` expected" ()
+    }
+| REGISTER e1=exp LAST
+    {
+        Prelude.Errors.raise_error ~loc:(with_file $loc)
+            ~msg:"missing expression after keyword ``last''; `reg e last e` expected" ()
+    }
+
+
 | e=aexp { e }
+
+
+
 
 dot_get:
 DOT LPAREN e=exp RPAREN { e }

@@ -1,4 +1,4 @@
-(* un bloc d'activation (frame est la structure de base)
+(* un bloc d'activation (frame est la structure de base 
    qui permet à une fonction appelante de continuer son éxécution
    une fois que l'appelée a retourné une valeur.
 
@@ -6,7 +6,7 @@
   - un pointeur de pile [sp] (c'est une position dans le tableau [stack])
   - un environnement [env] (c'est une position dans le tableau [heap] à partir 
                             de la quelle se situe les variables)
-  - un pointeur de code [pc] (c'est une position dans le tableau) [code]
+  - un pointeur de code [pc] (c'est une position dans le tableau [code]
   - un pointeur [fp] vers le bloc d'activation suivante *)
 type frame = ptr * ptr * ptr * ptr
 

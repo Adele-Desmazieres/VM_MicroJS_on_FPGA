@@ -1,9 +1,3 @@
-
-let load_bytecode_global() =
-  code.(0) <- I_GALLOC ();      (* N := 10 *)
-  code.(1) <- I_PUSH (Int 10);   
-  code.(2) <- I_GSTORE(0);
-
 let load_bytecode0() =
   code.(0) <- I_PUSH (Int 42);
   code.(1) <- I_POP () ;;  
