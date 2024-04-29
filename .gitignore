@@ -4,4 +4,4 @@
 main.vhdl
 tb_main.vhdl
 MicroJS/microjs
-eclat-compiler/eclat
+Eclat/eclat-compiler/eclat
