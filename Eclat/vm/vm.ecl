@@ -48,6 +48,24 @@ let get_int((stack, sp)) : int =
   | Int i -> i
   | _ -> fatal_error("Not an integer value")
   end;;
+  
+let equality((v1, v2): value * value) : bool =
+  match v1 with
+  | Bool b1 ->
+    match v2 with
+    | Bool b2 -> not(b1 xor b2)
+    | _ -> fatal_error("Type error: comparison between incompatible types.")
+    end
+  | Int n1 -> 
+    match v2 with
+    | Int n2 -> n1 = n2
+    | _ -> fatal_error("Type error: comparison between incompatible types.")
+    end
+  (* | (Nil (), Nil ()) -> true *)
+  (* | (Prim p1, Prim p2) -> p1 = p2 *)
+  | _ -> fatal_error("Type error: comparison between incompatible types.")
+  end
+;;
 
 (* exécution d'une instruction du programme, le [pc] 
    courrant est dans l'état de la VM (state) *)
@@ -82,16 +100,20 @@ let vm_run_instr (state : vm_state) : vm_state =
         match v with 
           | Prim p ->
             let r = (* faut créer un value depuis r avant de remettre dans le stack *)
-              match p with
-              | P_ADD () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) + get_int(stack, (sp-3)))
-              | P_SUB () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) - get_int(stack, (sp-3)))
-              | P_MUL () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) * get_int(stack, (sp-3)))
-              | P_DIV () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) / get_int(stack, (sp-3)))
-              | P_POW () -> check_arity (n, 2); Int (power(get_int(stack, (sp-2)), get_int(stack, (sp-3))))
-              | P_EQ () -> check_arity (n, 2); Bool (get_int(stack, (sp-2)) = get_int(stack, (sp-3))) (* todo bool *)
-              | P_LT () -> check_arity (n, 2); Bool (get_int(stack, (sp-2)) < get_int(stack, (sp-3)))
-              end
-            in (stack.(sp-n-1) <- r;
+            
+              (* let v1 = get_int(stack, (sp-2)) in
+              let v2 = get_int(stack, (sp-3)) in *)
+                match p with
+                | P_ADD () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) + get_int(stack, (sp-3)))
+                | P_SUB () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) - get_int(stack, (sp-3)))
+                | P_MUL () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) * get_int(stack, (sp-3)))
+                | P_DIV () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) / get_int(stack, (sp-3)))
+                | P_POW () -> check_arity (n, 2); Int (power(get_int(stack, (sp-2)), get_int(stack, (sp-3))))
+                | P_EQ () -> check_arity (n, 2); Bool (equality (stack.(sp-2), stack.(sp-3)))
+                | P_LT () -> check_arity (n, 2); Bool (get_int(stack, (sp-2)) < get_int(stack, (sp-3)))
+                end
+              in 
+            (stack.(sp-n-1) <- r;
             ((sp-n, env, pc, fp), gp, hp, wb, finished))
 
           | _ -> fatal_error("Call primitive without a primitve value. ")
