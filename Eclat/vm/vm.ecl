@@ -30,7 +30,7 @@ type vm_state = (frame * ptr * ptr * (bool * (ptr * value)) * bool)
 
 let check_arity ((arity1, arity2):int*int) : unit =
   if arity1 != arity2 then fatal_error("Arité de la primitive erronnée")
-  else ()
+  else ();;
 
 let print_vm_state ((frame,gp,hp,_,_):vm_state) : unit =
   print_frame frame;
@@ -38,11 +38,16 @@ let print_vm_state ((frame,gp,hp,_,_):vm_state) : unit =
   print_string "|hp:"; print_int gp;
   print_newline();;
 
-let power ((x, n): int * int) : int =
-  let r = 1 in
-  for i = 0 to n do (* n inclu *)
-    r <- r*x
-  done; r;;
+let rec power ((x, n): int<32> * int<32>) : int<32> =
+  if n = 0 then 1
+  else x * power(x, n-1);;
+
+(* value array<'a> * int *)
+let get_int((stack, sp)) : int =
+  match stack.(sp) with
+  | Int i -> i
+  | _ -> fatal_error("Not an integer value")
+  end;;
 
 (* exécution d'une instruction du programme, le [pc] 
    courrant est dans l'état de la VM (state) *)
@@ -51,63 +56,55 @@ let vm_run_instr (state : vm_state) : vm_state =
   let (sp,env,pc,fp) = frame in
   let instr = code.(pc) in
   
-  if (finished) then
-    (print_int v; print_newline (); exit ())
-  else
-    match instr with
-    
-      | I_GALLOC u ->
-          if gp+1 > global_size then fatal_error("Globals memory full")
-          else state
-          
-      (* | I_GSTORE p -> (globals.(gp) <- p; (frame, gp+1, hp, write_buf, finished))
-      
-      | I_GFETCH p -> (globals)
-      | I_STORE p -> (j)
-      | I_FETCH p -> () *)
-      
-      | I_PUSH v -> stack.(sp) <- v; ((sp+1, env, pc, fp), gp, hp write_buf, finished)
-      
-      (* | I_PUSH_FUN p -> () *)
-      
-      | I_POP () ->
-        let r = stack.(sp-1) in
-        if sp-1 = 0 then (frame, gp, hp, write_buf, true)
-        else ((sp-1, env, pc, fp), gp, hp write_buf, finished)
-      
-      | I_CALL n (* arity *) -> 
-          let v = stack.(sp-1) in
-          
-          match v with 
-            | Prim p ->
-              
-              let r = 
-              match p with
-              | P_ADD () -> check_arity n 2; stack.(sp-2) + stack.(sp-3)
-              | P_SUB () -> check_arity n 2; stack.(sp-2) - stack.(sp-3)
-              | P_MUL () -> check_arity n 2; stack.(sp-2) * stack.(sp-3)
-              | P_DIV () -> check_arity n 2; stack.(sp-2) / stack.(sp-3)
-              | P_POW () -> check_arity n 2; power(stack.(sp-2), stack.(sp-3))
-              | P_EQ () -> check_arity n 2; stack.(sp-2) = stack.(sp-3)
-              | P_LT () -> check_arity n 2; stack.(sp-2) < stack.(sp-3)
-              end ;;
-              in 
-              let stack.(sp-n-1) <- r in
-              ((sp-n, env, pc, fp), gp, hp write_buf, finished)
-            
-            | _ -> fatal_error("Call primitive without a primitve value. ")
-          
-            end;;
-      
-      (*
-        | I_RETURN () -> ()
-        | I_JUMP p -> ()
-        | I_JTRUE p -> ()
-        | I_JFALSE p -> () *)
+  match instr with
+  
+    | I_GALLOC u ->
+        if gp+1 > global_size then fatal_error("Globals memory full")
+        else state
         
-      | _ -> fatal_error("Not implemented")
+    (* | I_GSTORE p -> (globals.(gp) <- p; (frame, gp+1, hp, write_buf, finished))
+    
+    | I_GFETCH p -> (globals)
+    | I_STORE p -> (j)
+    | I_FETCH p -> () *)
+    
+    | I_PUSH v -> stack.(sp) <- v; ((sp+1, env, pc, fp), gp, hp write_buf, finished)
+    
+    (* | I_PUSH_FUN p -> () *)
+    
+    | I_POP () ->
+      let r = stack.(sp-1) in
+      if sp-1 = 0 then (frame, gp, hp, write_buf, true)
+      else ((sp-1, env, pc, fp), gp, hp write_buf, finished)
+
+    | I_CALL n (* arity *) -> 
+        let v = stack.(sp-1) in
+        match v with 
+          | Prim p ->
+            let r = (* faut créer un value depuis r avant de remettre dans le stack *)
+              match p with
+              | P_ADD () -> check_arity (n, 2); get_int(stack.(sp-2)) + get_int(stack.(sp-3))
+              | P_SUB () -> check_arity (n, 2); get_int(stack.(sp-2)) - get_int(stack.(sp-3))
+              | P_MUL () -> check_arity (n, 2); get_int(stack.(sp-2)) * get_int(stack.(sp-3))
+              | P_DIV () -> check_arity (n, 2); get_int(stack.(sp-2)) / get_int(stack.(sp-3))
+              | P_POW () -> check_arity (n, 2); power(get_int(stack.(sp-2)), get_int(stack.(sp-3)))
+              | P_EQ () -> check_arity (n, 2); get_int(stack.(sp-2)) = get_int(stack.(sp-3)) (* todo bool *)
+              | P_LT () -> check_arity (n, 2); get_int(stack.(sp-2)) < get_int(stack.(sp-3))
+              end
+            in (stack.(sp-n-1) <- r;
+            ((sp-n, env, pc, fp), gp, hp write_buf, finished))
+
+          | _ -> fatal_error("Call primitive without a primitve value. ")
+
+          end
+    (*
+      | I_RETURN () -> ()
+      | I_JUMP p -> ()
+      | I_JTRUE p -> ()
+      | I_JFALSE p -> () *)
       
-    end
+    | _ -> fatal_error("Not implemented")
+  end
 ;;
 
 (* exécution d'un programme (stocké dans le tableau global [bytecode] *)

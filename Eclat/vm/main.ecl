@@ -95,7 +95,7 @@ let main debug =
   let cy = counter (is_loaded) in
 
   let ((),rdy) = exec 
-                    display_start cy; run_vm debug
+                    display_start cy; run_vm true
                  default ()
   in
   if rdy then display_end cy else () ;;
