@@ -5,3 +5,4 @@ main.vhdl
 tb_main.vhdl
 MicroJS/microjs
 Eclat/eclat-compiler/eclat
+*.cf
