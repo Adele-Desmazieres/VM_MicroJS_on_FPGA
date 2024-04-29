@@ -68,14 +68,14 @@ let vm_run_instr (state : vm_state) : vm_state =
     | I_STORE p -> (j)
     | I_FETCH p -> () *)
     
-    | I_PUSH v -> stack.(sp) <- v; ((sp+1, env, pc, fp), gp, hp write_buf, finished)
+    | I_PUSH v -> stack.(sp) <- v; ((sp+1, env, pc, fp), gp, hp, wb, finished)
     
     (* | I_PUSH_FUN p -> () *)
     
     | I_POP () ->
       let r = stack.(sp-1) in
-      if sp-1 = 0 then (frame, gp, hp, write_buf, true)
-      else ((sp-1, env, pc, fp), gp, hp write_buf, finished)
+      if sp-1 = 0 then (frame, gp, hp, wb, true)
+      else ((sp-1, env, pc, fp), gp, hp, wb, finished)
 
     | I_CALL n (* arity *) -> 
         let v = stack.(sp-1) in
@@ -83,16 +83,16 @@ let vm_run_instr (state : vm_state) : vm_state =
           | Prim p ->
             let r = (* faut créer un value depuis r avant de remettre dans le stack *)
               match p with
-              | P_ADD () -> check_arity (n, 2); get_int(stack.(sp-2)) + get_int(stack.(sp-3))
-              | P_SUB () -> check_arity (n, 2); get_int(stack.(sp-2)) - get_int(stack.(sp-3))
-              | P_MUL () -> check_arity (n, 2); get_int(stack.(sp-2)) * get_int(stack.(sp-3))
-              | P_DIV () -> check_arity (n, 2); get_int(stack.(sp-2)) / get_int(stack.(sp-3))
-              | P_POW () -> check_arity (n, 2); power(get_int(stack.(sp-2)), get_int(stack.(sp-3)))
-              | P_EQ () -> check_arity (n, 2); get_int(stack.(sp-2)) = get_int(stack.(sp-3)) (* todo bool *)
-              | P_LT () -> check_arity (n, 2); get_int(stack.(sp-2)) < get_int(stack.(sp-3))
+              | P_ADD () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) + get_int(stack, (sp-3)))
+              | P_SUB () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) - get_int(stack, (sp-3)))
+              | P_MUL () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) * get_int(stack, (sp-3)))
+              | P_DIV () -> check_arity (n, 2); Int (get_int(stack, (sp-2)) / get_int(stack, (sp-3)))
+              | P_POW () -> check_arity (n, 2); Int (power(get_int(stack, (sp-2)), get_int(stack, (sp-3))))
+              | P_EQ () -> check_arity (n, 2); Bool (get_int(stack, (sp-2)) = get_int(stack, (sp-3))) (* todo bool *)
+              | P_LT () -> check_arity (n, 2); Bool (get_int(stack, (sp-2)) < get_int(stack, (sp-3)))
               end
             in (stack.(sp-n-1) <- r;
-            ((sp-n, env, pc, fp), gp, hp write_buf, finished))
+            ((sp-n, env, pc, fp), gp, hp, wb, finished))
 
           | _ -> fatal_error("Call primitive without a primitve value. ")
 
