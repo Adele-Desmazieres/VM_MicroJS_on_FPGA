@@ -1,3 +1,7 @@
 
 *.cmi
 *.cmo
+main.vhdl
+tb_main.vhdl
+MicroJS/microjs
+eclat-compiler/eclat
