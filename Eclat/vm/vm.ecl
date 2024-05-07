@@ -105,7 +105,7 @@ let vm_run_instr (state : vm_state) : vm_state =
     (* | I_PUSH_FUN p -> () *)
     | I_POP () ->
         let r = stack.(sp-1) in
-        if sp-1 = 0 then 
+        if sp-1 = 0 then
           (print_value r; print_newline (); (frame, gp, hp, wb, true))
         else ((sp-1, env, pc, fp), gp, hp, wb, finished)
 
@@ -132,9 +132,23 @@ let vm_run_instr (state : vm_state) : vm_state =
         end
 
 
-    | I_JUMP p -> ((sp, env, p-1, fp), gp, hp, wb, finished)
-    (* | I_JTRUE p ->  *)
-    (* | I_JFALSE p -> ()  *)
+    | I_JUMP p -> ((sp, env, p, fp), gp, hp, wb, finished)
+    | I_JTRUE ptr1 ->
+        match stack.(sp-1) with
+        | Bool condi ->
+            if condi then
+              ((sp, env, ptr1, fp), gp, hp, wb, finished)
+            else state
+        | _ -> fatal_error("")
+        end
+    | I_JFALSE ptr2 ->
+        match stack.(sp-1) with
+        | Bool condi ->
+            if not condi then
+              ((sp, env, ptr2, fp), gp, hp, wb, finished)
+            else state
+        | _ -> fatal_error("")
+        end
     (*
     | I_RETURN () -> ()
     *)
