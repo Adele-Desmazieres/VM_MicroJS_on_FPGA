@@ -12,12 +12,19 @@ let load_bytecode1() =
   code.(4) <- I_POP () ;;
   (* devrait afficher 43 *)
 
-let load_bytecode1_bis() =
-  code.(0) <- I_PUSH (Int 42);
-  code.(1) <- I_PUSH (Int 2);
-  code.(2) <- I_PUSH (Prim (P_LT()));
-  code.(3) <- I_CALL(2);
-  code.(4) <- I_POP () ;;
+let load_bytecode1_global() =
+  code.(0) <- I_GALLOC();
+  code.(1) <- I_PUSH (Int 42);
+  code.(2) <- I_GSTORE 0;
+  code.(3) <- I_GALLOC();
+  code.(4) <- I_PUSH (Int 1);
+  code.(5) <- I_GSTORE 1;
+  code.(6) <- I_GFETCH 1;
+  code.(7) <- I_GFETCH 0;
+  code.(8) <- I_PUSH (Prim (P_ADD()));
+  code.(9) <- I_CALL (2);
+  code.(10) <- I_POP();
+  () ;;
   (* devrait afficher 42 OPERATION 2 *)
 
 let load_bytecode2() =
@@ -81,9 +88,7 @@ let counter (b:bool) =
 let load load_bytecode =
   reg (fun is_loaded -> 
       if is_loaded then true else
-      let ((),rdy) = exec
-                       load_bytecode()
-                     default ()
+      let ((),rdy) = exec load_bytecode() default ()
       in rdy)
   last false ;;
 
@@ -97,13 +102,13 @@ let display_end cy =
 
 let main debug =
   (** chargement du programme *)
-  let is_loaded = load load_bytecode1_bis in
+  let is_loaded = load load_bytecode1_global in
 
   let cy = counter (is_loaded) in
 
-  let ((),rdy) = exec 
-                    display_start cy; run_vm debug
-                 default ()
+  let ((),rdy) =
+    exec display_start cy;
+    run_vm debug default ()
   in
   if rdy then display_end cy else () ;;
 

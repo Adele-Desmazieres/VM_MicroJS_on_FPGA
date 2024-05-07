@@ -57,6 +57,8 @@ let rec my_power ((val1, val2): int<32> * int<32>) : int<32> =
 
 (* value array<'a> * int *)
 let get_int_from_stack(curr_sp:int<32>) : int<32> =
+  print_value (stack.(curr_sp));
+  print_newline ();
   match stack.(curr_sp) with
   | Int i -> i
   | _ -> fatal_error("Not an integer value")
@@ -86,59 +88,55 @@ let equality((v1, v2): value * value) : bool =
 
 (* exécution d'une instruction du programme, le [pc] 
    courrant est dans l'état de la VM (state) *)
+
 let vm_run_instr (state : vm_state) : vm_state =
   let (frame, gp, hp, wb, finished) = state in
   let (sp, env, pc, fp) = frame in
   let instr = code.(pc) in
   match instr with
-    | I_GALLOC u ->
+    | I_GALLOC () ->
         if gp+1 > global_size then fatal_error("Globals memory full")
         else (frame, gp+1, hp, wb, finished)
-    | I_GSTORE p -> (globals.(p) <- stack.(sp); ((sp-1, env, pc, fp), gp, hp, wb, finished))
+    | I_GSTORE p -> (globals.(p) <- stack.(sp-1); ((sp-1, env, pc, fp), gp, hp, wb, finished))
     | I_GFETCH p -> (stack.(sp) <- globals.(p); ((sp+1, env, pc, fp), gp, hp, wb, finished))
     | I_STORE p -> (state)
     | I_FETCH p -> (state)
     | I_PUSH v -> stack.(sp) <- v; ((sp+1, env, pc, fp), gp, hp, wb, finished)
     (* | I_PUSH_FUN p -> () *)
     | I_POP () ->
-      let r = stack.(sp-1) in
-      if sp-1 = 0 
-        then 
-          (print_value r; print_newline ();
-          (frame, gp, hp, wb, true))
-      else ((sp-1, env, pc, fp), gp, hp, wb, finished)
-    
-    
+        let r = stack.(sp-1) in
+        if sp-1 = 0 then 
+          (print_value r; print_newline (); (frame, gp, hp, wb, true))
+        else ((sp-1, env, pc, fp), gp, hp, wb, finished)
+
     | I_CALL n (* arity *) ->
         let v = stack.(sp-1) in 
-        
         match v with
-          | Prim pt -> 
-            let res = 
-              match pt with
-              | P_ADD () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) + get_int_from_stack(sp-2))
-              | P_SUB () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) - get_int_from_stack(sp-2))
-              | P_MUL () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) * get_int_from_stack(sp-2))
-              | P_DIV () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) / get_int_from_stack(sp-2))
-              | P_POW () -> check_arity (n, 2); Int (my_power(get_int_from_stack(sp-3), get_int_from_stack(sp-2)))
-              | P_EQ () -> check_arity (n, 2); Bool (equality (stack.(sp-3), stack.(sp-2)))
-              | P_LT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-3) < get_int_from_stack(sp-2))
-              | _ -> Bool false
-              end 
-            in
-            (stack.(sp-n-1) <- res;
-            ((sp-n, env, pc, fp), gp, hp, wb, finished)) 
-            
-          | _ -> fatal_error("I_CALL on something else than a primitive.")
-          
+        | Prim pt ->
+          let res =
+            match pt with
+            | P_ADD () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) + get_int_from_stack(sp-2))
+            | P_SUB () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) - get_int_from_stack(sp-2))
+            | P_MUL () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) * get_int_from_stack(sp-2))
+            | P_DIV () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) / get_int_from_stack(sp-2))
+            | P_POW () -> check_arity (n, 2); Int (my_power(get_int_from_stack(sp-3), get_int_from_stack(sp-2)))
+            | P_EQ () -> check_arity (n, 2); Bool (equality (stack.(sp-3), stack.(sp-2)))
+            | P_LT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-3) < get_int_from_stack(sp-2))
+            | _ -> Bool false
+            end
+          in
+          (stack.(sp-n-1) <- res;
+          ((sp-n, env, pc, fp), gp, hp, wb, finished))
+
+        | _ -> fatal_error("I_CALL on something else than a primitive.")
         end
-         
-    
+
+
     | I_JUMP p -> ((sp, env, p-1, fp), gp, hp, wb, finished)
+    (* | I_JTRUE p ->  *)
+    (* | I_JFALSE p -> ()  *)
     (*
     | I_RETURN () -> ()
-    | I_JTRUE p -> ()
-    | I_JFALSE p -> () 
     *)
     | _ -> fatal_error("Not implemented")
   end
