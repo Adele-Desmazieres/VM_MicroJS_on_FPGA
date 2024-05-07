@@ -40,6 +40,7 @@ let rec power((base, exp, accu): int<32> * int<32> * int<32>): int<32> =
 
 (* value array<'a> * int *)
 let get_int_from_stack(curr_sp:int<32>) : int<32> =
+  (* print_value (stack.(curr_sp)); *)
   match stack.(curr_sp) with
   | Int i -> i
   | _ -> fatal_error("Not an integer value")
@@ -85,6 +86,14 @@ let print_instr (instruction : instr) : unit =
   end
 ;;
 
+let print_stack (sp) : unit = 
+  for i = 0 to (sp-1) do
+    print_value (stack.(i));
+    print_string " "
+  done;
+  print_newline ()
+;;
+
 let print_vm_state ((frame,gp,hp,_,_):vm_state) : unit =
   let (sp, env, pc, fp) = frame in
   let instr = code.(pc) in
@@ -101,6 +110,7 @@ let vm_run_instr (state : vm_state) : vm_state =
   let (frame, gp, hp, wb, finished) = state in
   let (sp, env, pc, fp) = frame in
   let instr = code.(pc) in
+  print_stack sp;
   match instr with
     | I_GALLOC () ->
         if gp+1 > global_size then fatal_error("Globals memory full")
@@ -122,13 +132,13 @@ let vm_run_instr (state : vm_state) : vm_state =
         | Prim pt ->
           let res =
             match pt with
-            | P_ADD () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) + get_int_from_stack(sp-2))
-            | P_SUB () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) - get_int_from_stack(sp-2))
-            | P_MUL () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) * get_int_from_stack(sp-2))
-            | P_DIV () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) / get_int_from_stack(sp-2))
-            | P_POW () -> check_arity (n, 2); Int (power(get_int_from_stack(sp-3), get_int_from_stack(sp-2), 1))
-            | P_EQ () -> check_arity (n, 2); Bool (equality (stack.(sp-3), stack.(sp-2)))
-            | P_LT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-3) < get_int_from_stack(sp-2))
+            | P_ADD () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) + get_int_from_stack(sp-3))
+            | P_SUB () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) - get_int_from_stack(sp-3))
+            | P_MUL () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) * get_int_from_stack(sp-3))
+            | P_DIV () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) / get_int_from_stack(sp-3))
+            | P_POW () -> check_arity (n, 2); Int (power(get_int_from_stack(sp-2), get_int_from_stack(sp-3), 1))
+            | P_EQ () -> check_arity (n, 2); Bool (equality (stack.(sp-2), stack.(sp-3)))
+            | P_LT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-2) < get_int_from_stack(sp-3))
             | _ -> Bool false
             end
           in
@@ -153,25 +163,28 @@ let vm_run_instr (state : vm_state) : vm_state =
         end
 
 
-    | I_JUMP p -> ((sp, env, p, fp), gp, hp, wb, finished)
+    | I_JUMP p -> ((sp, env, p-1, fp), gp, hp, wb, finished)
     | I_JTRUE ptr1 ->
+        print_value (stack.(sp-1));
         match stack.(sp-1) with
         | Bool condi ->
             if condi then
-              ((sp, env, ptr1, fp), gp, hp, wb, finished)
-            else state
-        | _ -> fatal_error("")
+              ((sp-1, env, ptr1-1, fp), gp, hp, wb, finished)
+            else
+              ((sp-1, env, pc, fp), gp, hp, wb, finished)
+        | _ -> fatal_error("jtrue on non boolean")
         end
     | I_JFALSE ptr2 ->
         match stack.(sp-1) with
         | Bool condi ->
             if not condi then
-              ((sp, env, ptr2, fp), gp, hp, wb, finished)
-            else state
-        | _ -> fatal_error("")
+              ((sp-1, env, ptr2-1, fp), gp, hp, wb, finished)
+            else
+              ((sp-1, env, pc, fp), gp, hp, wb, finished)
+        | _ -> fatal_error("jfalse on non boolean")
         end
 
-    | I_PUSH_FUN p -> (stack.(sp) <- Closure(p, env); ((sp+1, env, p, fp), gp, hp, wb, finished))
+    | I_PUSH_FUN p -> (stack.(sp) <- Closure(p, env); ((sp+1, env, p-1, fp), gp, hp, wb, finished))
     | I_RETURN () ->
         let return_val = stack.(sp-1)
         and old_frame = frames.(fp-1) in

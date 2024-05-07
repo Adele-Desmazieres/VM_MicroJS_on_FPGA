@@ -59,7 +59,7 @@ let load_bytecode_curr_env () =
   code.(15) <- I_RETURN();
   code.(16) <- I_PUSH_FUN (2);
   code.(17) <- I_GSTORE 0;
-  code.(18) <- I_PUSH (Int 10);
+  code.(18) <- I_PUSH (Int 20);
   code.(19) <- I_GFETCH 0;
   code.(20) <- I_CALL (1);
   code.(21) <- I_POP();
@@ -100,8 +100,8 @@ let load_bytecode3() =
   code.(14) <- I_CALL(2);
   code.(15) <- I_JTRUE 22;
 
-  code.(16) <- I_GFETCH(0);     (* N := N - 1 *)
-  code.(17) <- I_PUSH(Int 1);
+  code.(16) <- I_PUSH(Int 1);
+  code.(17) <- I_GFETCH(0);     (* N := N - 1 *)
   code.(18) <- I_PUSH(Prim (P_SUB()));
   code.(19) <- I_CALL(2);
   code.(20) <- I_GSTORE(0);
@@ -112,6 +112,26 @@ let load_bytecode3() =
   code.(22) <- I_GFETCH(1);
   code.(23) <- I_POP() ;;
   (* devrait afficher 55 *)
+
+let load_bytecode_while () =
+  code.(0) <- I_GALLOC();
+  code.(1) <- I_PUSH (Int 0);
+  code.(2) <- I_GSTORE 0;
+  code.(3) <- I_JUMP 9;
+  code.(4) <- I_PUSH (Int 1);
+  code.(5) <- I_GFETCH 0;
+  code.(6) <- I_PUSH (Prim (P_ADD()));
+  code.(7) <- I_CALL (2);
+  code.(8) <- I_GSTORE 0;
+  code.(9) <- I_PUSH (Int 10);
+  code.(10) <- I_GFETCH 0;
+  code.(11) <- I_PUSH (Prim (P_LT()));
+  code.(12) <- I_CALL (2);
+  code.(13) <- I_JTRUE 4;
+  code.(14) <- I_GFETCH 0;
+  code.(15) <- I_POP();
+  () 
+;;
 
 
 let init_state = ((0,0,0,0),0,0,(false,(0,Nil())),false) ;;
@@ -141,7 +161,7 @@ let display_end cy =
 
 let main debug =
   (** chargement du programme *)
-  let is_loaded = load load_bytecode_curr_env in
+  let is_loaded = load load_bytecode3 in
 
   let cy = counter (is_loaded) in
 
