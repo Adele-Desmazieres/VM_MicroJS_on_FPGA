@@ -27,43 +27,25 @@ type instr =
 
 type vm_state = (frame * ptr * ptr * (bool * (ptr * value)) * bool)
 
-
 let check_arity ((arity1, arity2): long * long) : unit =
-  if arity1 != arity2 then fatal_error("Arité de la primitive erronnée")
-  else ();;
-
-let print_vm_state ((frame,gp,hp,_,_):vm_state) : unit =
-  print_frame frame;
-  print_string "|gp:"; print_int gp;
-  print_string "|hp:"; print_int gp;
-  print_newline();;
-
-let rec my_power ((val1, val2): int<32> * int<32>) : int<32> =
-  print_int val1;
-  print_newline ();
-  if val2 = 0 then 1
-  else 
-    let rec_val = my_power(val1, (val2-1)) in
-    (val1 * rec_val)
+  if arity1 != arity2 then 
+    fatal_error("Arité de la primitive erronnée")
+  else ()
 ;;
 
-(* let my_power ((val1, val2): int<32> * int<32>) : int<32> =
-  let result = 1 in
-  (* for i allant de 1 à val2 inclu *)
-  for i = 1 to val2-1 do
-    result = result * val1
-  done;
-  result *)
+let rec power((base, exp, accu): int<32> * int<32> * int<32>): int<32> =
+  if exp = 0 then 1 * accu
+  else power(base, exp-1, accu * base)
+;;
 
 (* value array<'a> * int *)
 let get_int_from_stack(curr_sp:int<32>) : int<32> =
-  print_value (stack.(curr_sp));
-  print_newline ();
   match stack.(curr_sp) with
   | Int i -> i
   | _ -> fatal_error("Not an integer value")
-  end;;
-  
+  end
+;;
+
 let equality((v1, v2): value * value) : bool =
   match v1 with
   | Bool b1 ->
@@ -81,14 +63,40 @@ let equality((v1, v2): value * value) : bool =
     | Nil () -> true
     | _ -> fatal_error("Type error: comparison between incompatible types.")
     end
-  (* | (Prim p1, Prim p2) -> p1 = p2 *)
-  | _ -> fatal_error("Type error: comparison between incompatible types.")
+  | _ -> fatal_error("Type error: incompatible type for equality check.")
   end
+;;
+
+let print_instr (instruction : instr) : unit =
+  match instruction with
+  | I_GALLOC _ -> print_string "galloc"
+  | I_GSTORE _ -> print_string "gstore"
+  | I_GFETCH _ -> print_string "gfetch"
+  | I_STORE _ -> print_string "store"
+  | I_FETCH _ -> print_string "fetch"
+  | I_PUSH _ -> print_string "push"
+  | I_PUSH_FUN _ -> print_string "push_fun"
+  | I_POP _ -> print_string "pop"
+  | I_CALL _ -> print_string "call"
+  | I_RETURN _ -> print_string "return"
+  | I_JUMP _ -> print_string "jump"
+  | I_JTRUE _ -> print_string "jtrue"
+  | I_JFALSE _ -> print_string "jfalse"
+  end
+;;
+
+let print_vm_state ((frame,gp,hp,_,_):vm_state) : unit =
+  let (sp, env, pc, fp) = frame in
+  let instr = code.(pc) in
+  print_frame frame;
+  print_string "|gp:"; print_int gp;
+  print_string "|hp:"; print_int gp;
+  print_string "|code:"; print_instr instr;
+  print_newline()
 ;;
 
 (* exécution d'une instruction du programme, le [pc] 
    courrant est dans l'état de la VM (state) *)
-
 let vm_run_instr (state : vm_state) : vm_state =
   let (frame, gp, hp, wb, finished) = state in
   let (sp, env, pc, fp) = frame in
@@ -102,7 +110,6 @@ let vm_run_instr (state : vm_state) : vm_state =
     | I_STORE p -> (heap.(env+p) <- stack.(sp-1); ((sp-1, env, pc, fp), gp, hp, wb, finished))
     | I_FETCH p -> (stack.(sp) <- heap.(env+p); ((sp+1, env, pc, fp), gp, hp, wb, finished))
     | I_PUSH v -> stack.(sp) <- v; ((sp+1, env, pc, fp), gp, hp, wb, finished)
-    (* | I_PUSH_FUN p -> () *)
     | I_POP () ->
         let r = stack.(sp-1) in
         if sp-1 = 0 then
@@ -119,7 +126,7 @@ let vm_run_instr (state : vm_state) : vm_state =
             | P_SUB () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) - get_int_from_stack(sp-2))
             | P_MUL () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) * get_int_from_stack(sp-2))
             | P_DIV () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) / get_int_from_stack(sp-2))
-            | P_POW () -> check_arity (n, 2); Int (my_power(get_int_from_stack(sp-3), get_int_from_stack(sp-2)))
+            | P_POW () -> check_arity (n, 2); Int (power(get_int_from_stack(sp-3), get_int_from_stack(sp-2), 1))
             | P_EQ () -> check_arity (n, 2); Bool (equality (stack.(sp-3), stack.(sp-2)))
             | P_LT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-3) < get_int_from_stack(sp-2))
             | _ -> Bool false
@@ -128,6 +135,20 @@ let vm_run_instr (state : vm_state) : vm_state =
           (stack.(sp-n-1) <- res;
           ((sp-n, env, pc, fp), gp, hp, wb, finished))
 
+        | Closure (code_ptr, old_env) ->
+            let new_hp = hp + n + 1 in
+            if new_hp > heap_size then
+              fatal_error("not enough heap memory")
+            else (
+              let new_env = hp in
+              heap.(new_env) <- Header old_env;
+              for i = 1 to n do
+                heap.(new_env + i) <- stack.(sp-i-1)
+              done;
+              frames.(fp+1) <- (sp-1-n, new_env, code_ptr, fp);
+              let new_frame = (sp-n, new_env, code_ptr-1, fp+1) in
+              (new_frame, gp, new_hp, wb, finished)
+            )
         | _ -> fatal_error("I_CALL on something else than a primitive.")
         end
 
@@ -149,10 +170,14 @@ let vm_run_instr (state : vm_state) : vm_state =
             else state
         | _ -> fatal_error("")
         end
-    (*
-    | I_RETURN () -> ()
-    *)
-    | _ -> fatal_error("Not implemented")
+
+    | I_PUSH_FUN p -> (stack.(sp) <- Closure(p, env); ((sp+1, env, p, fp), gp, hp, wb, finished))
+    | I_RETURN () ->
+        let return_val = stack.(sp-1)
+        and old_frame = frames.(fp-1) in
+        let (o_sp, o_env, o_pc, o_fp) = old_frame in
+        stack.(o_sp) <- return_val;
+        ((o_sp+1, o_env, o_pc+1, o_fp), gp, hp, wb, finished)
   end
 ;;
 

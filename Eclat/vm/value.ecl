@@ -21,7 +21,8 @@ type value = Bool of bool
            | Int of long
            | Nil of unit
            | Prim of prim
-             (* à compléter *)
+           | Closure of ptr * ptr
+           | Header of ptr
 
 
 let print_prim (p:prim) : unit =
@@ -41,4 +42,9 @@ let print_value(v:value) : unit =
   | Int n -> print_int n
   | Nil() -> print_string "nil"
   | Prim p -> print_prim p
+  | Closure (p1, p2) ->
+      print_string "{";
+      print_int p1; print_string ","; print_int p2; 
+      print_string "}"
+  | Header p -> print_int p
   end ;;

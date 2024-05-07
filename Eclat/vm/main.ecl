@@ -24,8 +24,9 @@ let load_bytecode1_global() =
   code.(8) <- I_PUSH (Prim (P_ADD()));
   code.(9) <- I_CALL (2);
   code.(10) <- I_POP();
-  () ;;
-  (* devrait afficher 42 OPERATION 2 *)
+  ()
+;; (* devrait afficher 42 OPERATION 2 *)
+
 let load_bytecode_var_local () =
   code.(0) <- I_PUSH (Int 10);
   code.(1) <- I_STORE 0;
@@ -36,7 +37,34 @@ let load_bytecode_var_local () =
   code.(6) <- I_PUSH (Prim (P_SUB()));
   code.(7) <- I_CALL (2);
   code.(8) <- I_POP();
-  () ;;
+  ()
+;;
+
+let load_bytecode_curr_env () =
+  code.(0) <- I_GALLOC();
+  code.(1) <- I_JUMP 16;
+  code.(2) <- I_PUSH (Int 10);
+  code.(3) <- I_JUMP 11;
+  code.(4) <- I_FETCH 0;
+  code.(5) <- I_FETCH 1;
+  code.(6) <- I_PUSH (Prim (P_ADD()));
+  code.(7) <- I_CALL (2);
+  code.(8) <- I_RETURN();
+  code.(9) <- I_PUSH (Nil());
+  code.(10) <- I_RETURN();
+  code.(11) <- I_PUSH_FUN (4);
+  code.(12) <- I_CALL (1);
+  code.(13) <- I_POP();
+  code.(14) <- I_PUSH (Nil());
+  code.(15) <- I_RETURN();
+  code.(16) <- I_PUSH_FUN (2);
+  code.(17) <- I_GSTORE 0;
+  code.(18) <- I_PUSH (Int 10);
+  code.(19) <- I_GFETCH 0;
+  code.(20) <- I_CALL (1);
+  code.(21) <- I_POP();
+  ()
+;; (* devrait afficher 20 *)
 
 let load_bytecode2() =
   code.(0) <- I_PUSH (Int 42);
@@ -113,7 +141,7 @@ let display_end cy =
 
 let main debug =
   (** chargement du programme *)
-  let is_loaded = load load_bytecode_var_local in
+  let is_loaded = load load_bytecode_curr_env in
 
   let cy = counter (is_loaded) in
 
