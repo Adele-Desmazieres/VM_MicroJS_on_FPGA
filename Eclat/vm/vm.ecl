@@ -43,7 +43,7 @@ let get_int_from_stack(curr_sp:int<32>) : int<32> =
   (* print_value (stack.(curr_sp)); *)
   match stack.(curr_sp) with
   | Int i -> i
-  | _ -> fatal_error("Not an integer value")
+  | _ -> print_value (stack.(curr_sp)); fatal_error(" not an integer value")
   end
 ;;
 
@@ -86,7 +86,8 @@ let print_instr (instruction : instr) : unit =
   end
 ;;
 
-let print_stack_content (sp) : unit = 
+let print_stack (sp) : unit =
+  print_string "Stack   : ";
   for i = 0 to (sp-1) do
     print_value (stack.(i));
     print_string " "
@@ -94,9 +95,21 @@ let print_stack_content (sp) : unit =
   print_newline ()
 ;;
 
-let print_stack (sp) : unit =
-  print_string "Stack (bottom to top) : ";
-  print_stack_content sp;
+let print_heap (hp) : unit =
+  print_string "Heap    : ";
+  for i = 0 to (hp-1) do
+    print_value (heap.(i));
+    print_string " "
+  done;
+  print_newline ()
+;;
+
+let print_globals (gp) : unit =
+  print_string "Globals : ";
+  for i = 0 to (gp-1) do
+    print_value (globals.(i));
+    print_string " "
+  done;
   print_newline ()
 ;;
 
@@ -156,10 +169,10 @@ let vm_run_instr (state : vm_state) : vm_state =
               fatal_error("not enough heap memory")
             else (
               let new_env = hp in
-              heap.(new_env) <- Header old_env;
-              for i = 1 to n do
+              for i = 0 to n do
                 heap.(new_env + i) <- stack.(sp-i-1)
               done;
+              heap.(new_env) <- Header old_env;
               frames.(fp+1) <- (sp-1-n, new_env, code_ptr, fp);
               let new_frame = (sp-n, new_env, code_ptr-1, fp+1) in
               (new_frame, gp, new_hp, wb, finished)
@@ -189,7 +202,7 @@ let vm_run_instr (state : vm_state) : vm_state =
         | _ -> fatal_error("jfalse on non boolean")
         end
 
-    | I_PUSH_FUN p -> (stack.(sp) <- Closure(p, env); ((sp+1, env, p-1, fp), gp, hp, wb, finished))
+    | I_PUSH_FUN p -> (stack.(sp) <- Closure(p, env); ((sp+1, env, pc, fp), gp, hp, wb, finished))
     | I_RETURN () ->
         let return_val = stack.(sp-1)
         and old_frame = frames.(fp-1) in
@@ -201,7 +214,17 @@ let vm_run_instr (state : vm_state) : vm_state =
 
 (* exécution d'un programme (stocké dans le tableau global [bytecode] *)
 let rec vm_run_code ((state,debug) : vm_state * bool) : unit =
-  (if debug then print_vm_state state else ()); (* affichage de l'état de la VM *)
+  (
+    if debug then
+      let (frame,gp,hp,write_buf,finished) = state in
+      let (sp,env,pc,fp) = frame in
+      print_globals gp;
+      print_stack sp;
+      print_heap hp;
+      print_vm_state state;
+      print_newline ()
+    else ()
+  ); (* affichage de l'état de la VM *)
   let (frame,gp,hp,write_buf,finished) = vm_run_instr(state) in
   if finished then () else 
   let (sp,env,pc,fp) = frame in
@@ -209,6 +232,4 @@ let rec vm_run_code ((state,debug) : vm_state * bool) : unit =
   (* fait [pc+1] après chaque instruction exécutée : 
      en cas de changement de pc par l'instruction d'avant (branchements, etc.), 
      il faudra vers [nouveau_pc-1]) *)
-  
-  (if debug then print_stack sp else ()); (* affichage de l'état de la VM *)
   vm_run_code(((sp,env,next_pc,fp),gp,hp,write_buf,finished),debug) ;; 

@@ -34,7 +34,7 @@ let print_prim (p:prim) : unit =
   | P_POW () -> print_string "pow"
   | P_EQ () -> print_string "=="
   | P_LT () -> print_string "<"
-    end ;;
+  end ;;
 
 let print_value(v:value) : unit =
   match v with
@@ -46,5 +46,8 @@ let print_value(v:value) : unit =
       print_string "{";
       print_int p1; print_string ","; print_int p2; 
       print_string "}"
-  | Header p -> print_int p
+  | Header p -> 
+      print_string "h(";
+      print_int p;
+      print_string ")"
   end ;;

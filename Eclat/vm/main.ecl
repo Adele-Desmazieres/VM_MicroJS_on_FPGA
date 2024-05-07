@@ -161,7 +161,7 @@ let display_end cy =
 
 let main debug =
   (** chargement du programme *)
-  let is_loaded = load load_bytecode3 in
+  let is_loaded = load load_bytecode_curr_env in
 
   let cy = counter (is_loaded) in
 
