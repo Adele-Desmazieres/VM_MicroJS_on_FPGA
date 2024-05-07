@@ -86,11 +86,17 @@ let print_instr (instruction : instr) : unit =
   end
 ;;
 
-let print_stack (sp) : unit = 
+let print_stack_content (sp) : unit = 
   for i = 0 to (sp-1) do
     print_value (stack.(i));
     print_string " "
   done;
+  print_newline ()
+;;
+
+let print_stack (sp) : unit =
+  print_string "Stack (bottom to top) : ";
+  print_stack_content sp;
   print_newline ()
 ;;
 
@@ -110,7 +116,6 @@ let vm_run_instr (state : vm_state) : vm_state =
   let (frame, gp, hp, wb, finished) = state in
   let (sp, env, pc, fp) = frame in
   let instr = code.(pc) in
-  print_stack sp;
   match instr with
     | I_GALLOC () ->
         if gp+1 > global_size then fatal_error("Globals memory full")
@@ -165,7 +170,7 @@ let vm_run_instr (state : vm_state) : vm_state =
 
     | I_JUMP p -> ((sp, env, p-1, fp), gp, hp, wb, finished)
     | I_JTRUE ptr1 ->
-        print_value (stack.(sp-1));
+        (* print_value (stack.(sp-1)); *)
         match stack.(sp-1) with
         | Bool condi ->
             if condi then
@@ -204,4 +209,6 @@ let rec vm_run_code ((state,debug) : vm_state * bool) : unit =
   (* fait [pc+1] après chaque instruction exécutée : 
      en cas de changement de pc par l'instruction d'avant (branchements, etc.), 
      il faudra vers [nouveau_pc-1]) *)
+  
+  (if debug then print_stack sp else ()); (* affichage de l'état de la VM *)
   vm_run_code(((sp,env,next_pc,fp),gp,hp,write_buf,finished),debug) ;; 
