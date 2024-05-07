@@ -19,7 +19,7 @@ let load_bytecode2() =
   code.(2) <- I_PUSH (Prim (P_ADD()));
   code.(3) <- I_CALL(2);
   code.(4) <- I_PUSH (Int 5);
-  code.(5) <- I_PUSH (Prim (P_ADD()));
+  code.(5) <- I_PUSH (Prim (P_MUL()));
   code.(6) <- I_CALL(2);
   code.(7) <- I_POP () ;;
   (* devrait afficher 48 *)
@@ -90,12 +90,12 @@ let display_end cy =
 
 let main debug =
   (** chargement du programme *)
-  let is_loaded = load load_bytecode0 in
+  let is_loaded = load load_bytecode2 in
 
   let cy = counter (is_loaded) in
 
   let ((),rdy) = exec 
-                    display_start cy; run_vm true
+                    display_start cy; run_vm debug
                  default ()
   in
   if rdy then display_end cy else () ;;
