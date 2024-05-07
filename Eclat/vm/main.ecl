@@ -12,14 +12,21 @@ let load_bytecode1() =
   code.(4) <- I_POP () ;;
   (* devrait afficher 43 *)
 
+let load_bytecode1_bis() =
+  code.(0) <- I_PUSH (Int 42);
+  code.(1) <- I_PUSH (Int 2);
+  code.(2) <- I_PUSH (Prim (P_LT()));
+  code.(3) <- I_CALL(2);
+  code.(4) <- I_POP () ;;
+  (* devrait afficher 42 OPERATION 2 *)
 
 let load_bytecode2() =
   code.(0) <- I_PUSH (Int 42);
   code.(1) <- I_PUSH (Int 1);
-  code.(2) <- I_PUSH (Prim (P_ADD()));
+  code.(2) <- I_PUSH (Prim (P_POW()));
   code.(3) <- I_CALL(2);
   code.(4) <- I_PUSH (Int 5);
-  code.(5) <- I_PUSH (Prim (P_MUL()));
+  code.(5) <- I_PUSH (Prim (P_SUB()));
   code.(6) <- I_CALL(2);
   code.(7) <- I_POP () ;;
   (* devrait afficher 48 *)
@@ -90,7 +97,7 @@ let display_end cy =
 
 let main debug =
   (** chargement du programme *)
-  let is_loaded = load load_bytecode2 in
+  let is_loaded = load load_bytecode1_bis in
 
   let cy = counter (is_loaded) in
 

@@ -38,9 +38,22 @@ let print_vm_state ((frame,gp,hp,_,_):vm_state) : unit =
   print_string "|hp:"; print_int gp;
   print_newline();;
 
-let rec power ((x, n): int<32> * int<32>) : int<32> =
-  if n = 0 then 1
-  else x * power(x, n-1);;
+let rec my_power ((val1, val2): int<32> * int<32>) : int<32> =
+  print_int val1;
+  print_newline ();
+  if val2 = 0 then 1
+  else 
+    let rec_val = my_power(val1, (val2-1)) in
+    (val1 * rec_val)
+;;
+
+(* let my_power ((val1, val2): int<32> * int<32>) : int<32> =
+  let result = 1 in
+  (* for i allant de 1 à val2 inclu *)
+  for i = 1 to val2-1 do
+    result = result * val1
+  done;
+  result *)
 
 (* value array<'a> * int *)
 let get_int_from_stack(curr_sp:int<32>) : int<32> =
@@ -99,54 +112,28 @@ let vm_run_instr (state : vm_state) : vm_state =
     | I_CALL n (* arity *) ->
         let v = stack.(sp-1) in 
         
-        (* print_value v;
-        print_newline (); 
-        *)
-        let state2 = ((sp-2, env, pc, fp), gp, hp, wb, finished) in
-        
-        (* state2 *)
-        
         match v with
           | Prim pt -> 
             let res = 
               match pt with
-              | P_ADD () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) + get_int_from_stack(sp-3))
-              | P_SUB () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) - get_int_from_stack(sp-3))
-              | P_MUL () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) * get_int_from_stack(sp-3))
-              | P_DIV () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) / get_int_from_stack(sp-3))
-              | P_POW () -> check_arity (n, 2); Int (power(get_int_from_stack(sp-2), get_int_from_stack(sp-3)))
-              | P_EQ () -> check_arity (n, 2); Bool (equality (stack.(sp-2), stack.(sp-3)))
-              | P_LT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-2) < get_int_from_stack(sp-3))
+              | P_ADD () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) + get_int_from_stack(sp-2))
+              | P_SUB () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) - get_int_from_stack(sp-2))
+              | P_MUL () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) * get_int_from_stack(sp-2))
+              | P_DIV () -> check_arity (n, 2); Int (get_int_from_stack(sp-3) / get_int_from_stack(sp-2))
+              | P_POW () -> check_arity (n, 2); Int (my_power(get_int_from_stack(sp-3), get_int_from_stack(sp-2)))
+              | P_EQ () -> check_arity (n, 2); Bool (equality (stack.(sp-3), stack.(sp-2)))
+              | P_LT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-3) < get_int_from_stack(sp-2))
               | _ -> Bool false
               end 
             in
             (stack.(sp-n-1) <- res;
             ((sp-n, env, pc, fp), gp, hp, wb, finished)) 
-          | _ -> state2
-        end
-        
-        (* match v with 
-          | Prim pt -> (
-            let res =
-                match pt with
-                | P_ADD () -> (check_arity (n, 2); Int (get_int(stack, (sp-2)) + get_int(stack, (sp-3))))
-                | P_SUB () -> (check_arity (n, 2); Int (get_int(stack, (sp-2)) - get_int(stack, (sp-3))))
-                | P_MUL () -> (check_arity (n, 2); Int (get_int(stack, (sp-2)) * get_int(stack, (sp-3))))
-                | P_DIV () -> (check_arity (n, 2); Int (get_int(stack, (sp-2)) / get_int(stack, (sp-3))))
-                | P_POW () -> (check_arity (n, 2); Int (power(get_int(stack, (sp-2)), get_int(stack, (sp-3)))))
-                | P_EQ () -> (*Bool true*) (check_arity (n, 2); Bool (equality (stack.(sp-2), stack.(sp-3))))
-                | P_LT () -> (check_arity (n, 2); Bool (get_int(stack, (sp-2)) < get_int(stack, (sp-3))))
-                | _ -> (Bool false)
-                end
-              in
-            (stack.(sp-n-1) <- res;
-            ((sp-n, env, pc, fp), gp, hp, wb, finished)) 
-            )
-
-          | _ -> state
-          end *)
-         
+            
+          | _ -> fatal_error("I_CALL on something else than a primitive.")
           
+        end
+         
+    
     | I_JUMP p -> ((sp, env, p-1, fp), gp, hp, wb, finished)
     (*
     | I_RETURN () -> ()
