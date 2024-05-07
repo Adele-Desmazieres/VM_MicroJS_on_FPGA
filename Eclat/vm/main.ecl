@@ -26,6 +26,17 @@ let load_bytecode1_global() =
   code.(10) <- I_POP();
   () ;;
   (* devrait afficher 42 OPERATION 2 *)
+let load_bytecode_var_local () =
+  code.(0) <- I_PUSH (Int 10);
+  code.(1) <- I_STORE 0;
+  code.(2) <- I_PUSH (Int 20);
+  code.(3) <- I_STORE 1;
+  code.(4) <- I_FETCH 1;
+  code.(5) <- I_FETCH 0;
+  code.(6) <- I_PUSH (Prim (P_SUB()));
+  code.(7) <- I_CALL (2);
+  code.(8) <- I_POP();
+  () ;;
 
 let load_bytecode2() =
   code.(0) <- I_PUSH (Int 42);
@@ -102,7 +113,7 @@ let display_end cy =
 
 let main debug =
   (** chargement du programme *)
-  let is_loaded = load load_bytecode1_global in
+  let is_loaded = load load_bytecode_var_local in
 
   let cy = counter (is_loaded) in
 

@@ -99,8 +99,8 @@ let vm_run_instr (state : vm_state) : vm_state =
         else (frame, gp+1, hp, wb, finished)
     | I_GSTORE p -> (globals.(p) <- stack.(sp-1); ((sp-1, env, pc, fp), gp, hp, wb, finished))
     | I_GFETCH p -> (stack.(sp) <- globals.(p); ((sp+1, env, pc, fp), gp, hp, wb, finished))
-    | I_STORE p -> (state)
-    | I_FETCH p -> (state)
+    | I_STORE p -> (heap.(env+p) <- stack.(sp-1); ((sp-1, env, pc, fp), gp, hp, wb, finished))
+    | I_FETCH p -> (stack.(sp) <- heap.(env+p); ((sp+1, env, pc, fp), gp, hp, wb, finished))
     | I_PUSH v -> stack.(sp) <- v; ((sp+1, env, pc, fp), gp, hp, wb, finished)
     (* | I_PUSH_FUN p -> () *)
     | I_POP () ->
