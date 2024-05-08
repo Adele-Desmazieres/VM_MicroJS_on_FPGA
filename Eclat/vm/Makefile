@@ -17,7 +17,7 @@ vm: $(ECLAT_COMPILER)/eclat
 	(cd $(ECLAT_COMPILER); ./eclat \
 		     -arg=$(DEBUG) -relax -notyB \
 		    $(FLAGS) \
-	        ../vm/fail.ecl ../vm/value.ecl ../vm/ram.ecl ../vm/frames.ecl ../vm/vm.ecl ../vm/main.ecl)
+	        ../vm/fail.ecl ../vm/value.ecl ../vm/ram.ecl ../vm/frames.ecl ../vm/vm.ecl ../vm/tests.ecl ../vm/main.ecl)
 
 $(ECLAT_COMPILER)/eclat:
 	(cd $(ECLAT_COMPILER); make)

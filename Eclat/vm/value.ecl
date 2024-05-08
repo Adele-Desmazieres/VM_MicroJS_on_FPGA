@@ -15,6 +15,7 @@ type prim = P_ADD of unit   (* en Eclat, tous les constructeurs doivent être pa
           | P_POW of unit
           | P_EQ of unit
           | P_LT of unit
+          | P_GT of unit
             (* à compléter *)
 
 type value = Bool of bool
@@ -34,6 +35,7 @@ let print_prim (p:prim) : unit =
   | P_POW () -> print_string "pow"
   | P_EQ () -> print_string "=="
   | P_LT () -> print_string "<"
+  | P_GT () -> print_string ">"
   end ;;
 
 let print_value(v:value) : unit =

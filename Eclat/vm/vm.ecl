@@ -68,6 +68,20 @@ let equality((v1, v2): value * value) : bool =
   end
 ;;
 
+let rec env_fetch((env, offset):  ptr * ptr) : value =
+  let curr = heap.(env) in
+  if offset = 0 then
+    match curr with
+    | Header other_env -> env_fetch (other_env, 0)
+    | _ -> curr
+    end
+  else
+    match curr with
+    | Header other_env -> env_fetch (other_env, offset)
+    | _ -> env_fetch (env+1, offset-1)
+    end
+;;
+
 let print_instr (instruction : instr) : unit =
   match instruction with
   | I_GALLOC _ -> print_string "galloc"
@@ -118,7 +132,7 @@ let print_vm_state ((frame,gp,hp,_,_):vm_state) : unit =
   let instr = code.(pc) in
   print_frame frame;
   print_string "|gp:"; print_int gp;
-  print_string "|hp:"; print_int gp;
+  print_string "|hp:"; print_int hp;
   print_string "|code:"; print_instr instr;
   print_newline()
 ;;
@@ -133,10 +147,10 @@ let vm_run_instr (state : vm_state) : vm_state =
     | I_GALLOC () ->
         if gp+1 > global_size then fatal_error("Globals memory full")
         else (frame, gp+1, hp, wb, finished)
-    | I_GSTORE p -> (globals.(p) <- stack.(sp-1); ((sp-1, env, pc, fp), gp, hp, wb, finished))
-    | I_GFETCH p -> (stack.(sp) <- globals.(p); ((sp+1, env, pc, fp), gp, hp, wb, finished))
-    | I_STORE p -> (heap.(env+p) <- stack.(sp-1); ((sp-1, env, pc, fp), gp, hp, wb, finished))
-    | I_FETCH p -> (stack.(sp) <- heap.(env+p); ((sp+1, env, pc, fp), gp, hp, wb, finished))
+    | I_GSTORE p -> globals.(p) <- stack.(sp-1); ((sp-1, env, pc, fp), gp, hp, wb, finished)
+    | I_GFETCH p -> stack.(sp) <- globals.(p); ((sp+1, env, pc, fp), gp, hp, wb, finished)
+    | I_STORE p -> heap.(env+p) <- stack.(sp-1); ((sp-1, env, pc, fp), gp, hp, wb, finished)
+    | I_FETCH p -> stack.(sp) <- (env_fetch (env, p)); ((sp+1, env, pc, fp), gp, hp, wb, finished)
     | I_PUSH v -> stack.(sp) <- v; ((sp+1, env, pc, fp), gp, hp, wb, finished)
     | I_POP () ->
         let r = stack.(sp-1) in
@@ -157,33 +171,33 @@ let vm_run_instr (state : vm_state) : vm_state =
             | P_POW () -> check_arity (n, 2); Int (power(get_int_from_stack(sp-2), get_int_from_stack(sp-3), 1))
             | P_EQ () -> check_arity (n, 2); Bool (equality (stack.(sp-2), stack.(sp-3)))
             | P_LT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-2) < get_int_from_stack(sp-3))
-            | _ -> Bool false
+            | P_GT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-2) > get_int_from_stack(sp-3))
             end
           in
           (stack.(sp-n-1) <- res;
           ((sp-n, env, pc, fp), gp, hp, wb, finished))
 
-        | Closure (code_ptr, old_env) ->
+        | Closure (closue_pc, closue_env) ->
             let new_hp = hp + n + 1 in
             if new_hp > heap_size then
               fatal_error("not enough heap memory")
             else (
               let new_env = hp in
-              for i = 0 to n do
-                heap.(new_env + i) <- stack.(sp-i-1)
+              for i = 0 to n-1 do
+                heap.(new_env+i) <- stack.(sp-i-2)
               done;
-              heap.(new_env) <- Header old_env;
-              frames.(fp+1) <- (sp-1-n, new_env, code_ptr, fp);
-              let new_frame = (sp-n, new_env, code_ptr-1, fp+1) in
+              heap.(new_env + n) <- Header closue_env;
+              let new_sp = sp-n-1 in
+              let new_fp = fp+1 in
+              frames.(new_fp) <- (new_sp, env, pc, fp);
+              let new_frame = (new_sp, new_env, closue_pc-1, new_fp) in
               (new_frame, gp, new_hp, wb, finished)
             )
-        | _ -> fatal_error("I_CALL on something else than a primitive.")
+        | _ -> fatal_error("I_CALL on something else than a primitive or a closure.")
         end
-
 
     | I_JUMP p -> ((sp, env, p-1, fp), gp, hp, wb, finished)
     | I_JTRUE ptr1 ->
-        (* print_value (stack.(sp-1)); *)
         match stack.(sp-1) with
         | Bool condi ->
             if condi then
@@ -205,10 +219,10 @@ let vm_run_instr (state : vm_state) : vm_state =
     | I_PUSH_FUN p -> (stack.(sp) <- Closure(p, env); ((sp+1, env, pc, fp), gp, hp, wb, finished))
     | I_RETURN () ->
         let return_val = stack.(sp-1)
-        and old_frame = frames.(fp-1) in
+        and old_frame = frames.(fp) in
         let (o_sp, o_env, o_pc, o_fp) = old_frame in
         stack.(o_sp) <- return_val;
-        ((o_sp+1, o_env, o_pc+1, o_fp), gp, hp, wb, finished)
+        ((o_sp+1, o_env, o_pc, o_fp), gp, hp, wb, finished)
   end
 ;;
 
