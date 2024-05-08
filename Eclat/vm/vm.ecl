@@ -1,6 +1,6 @@
 (* le type des instructions de la VM *)
-type instr = 
-  I_GALLOC of unit 
+type instr =
+  I_GALLOC of unit
   | I_GSTORE of ptr
   | I_GFETCH of ptr
   | I_STORE of ptr
@@ -19,7 +19,7 @@ type instr =
    - un pointeur [gp] sur la prochaine variable globale à allouer
    - un pointeur [hp] sur la prochaine adresse libre dans le tas
    - un buffer d'écriture postée [wb],comportement un booléen 
-        (qui indique quand une écriture doit avoir lieu), 
+        (qui indique quand une écriture doit avoir lieu),
         une adresse à écrire et la nouvelle valeur.
    - un booléen [finished] qui passe à vrai à la fin de l'exécution,
      en particulier lors de l'exécution d'une instruction POP
@@ -27,20 +27,13 @@ type instr =
 
 type vm_state = (frame * ptr * ptr * (bool * (ptr * value)) * bool)
 
-let check_arity ((arity1, arity2): long * long) : unit =
-  if arity1 != arity2 then 
-    fatal_error("Arité de la primitive erronnée")
-  else ()
-;;
-
+(* fonctions utilitaires *)
 let rec power((base, exp, accu): int<32> * int<32> * int<32>): int<32> =
   if exp = 0 then 1 * accu
   else power(base, exp-1, accu * base)
 ;;
 
-(* value array<'a> * int *)
 let get_int_from_stack(curr_sp:int<32>) : int<32> =
-  (* print_value (stack.(curr_sp)); *)
   match stack.(curr_sp) with
   | Int i -> i
   | _ -> print_value (stack.(curr_sp)); fatal_error(" not an integer value")
@@ -82,6 +75,7 @@ let rec env_fetch((env, offset):  ptr * ptr) : value =
     end
 ;;
 
+(* fonctions déboggage *)
 let print_instr (instruction : instr) : unit =
   match instruction with
   | I_GALLOC _ -> print_string "galloc"
@@ -142,37 +136,37 @@ let print_vm_state ((frame,gp,hp,_,_):vm_state) : unit =
 let vm_run_instr (state : vm_state) : vm_state =
   let (frame, gp, hp, wb, finished) = state in
   let (sp, env, pc, fp) = frame in
-  let instr = code.(pc) in
+  let instr = code.(pc)
+  and stack_head = if sp = 0 then (Bool false) else (stack.(sp-1)) in
   match instr with
     | I_GALLOC () ->
         if gp+1 > global_size then fatal_error("Globals memory full")
         else (frame, gp+1, hp, wb, finished)
-    | I_GSTORE p -> globals.(p) <- stack.(sp-1); ((sp-1, env, pc, fp), gp, hp, wb, finished)
+    | I_GSTORE p -> globals.(p) <- stack_head; ((sp-1, env, pc, fp), gp, hp, wb, finished)
     | I_GFETCH p -> stack.(sp) <- globals.(p); ((sp+1, env, pc, fp), gp, hp, wb, finished)
-    | I_STORE p -> heap.(env+p) <- stack.(sp-1); ((sp-1, env, pc, fp), gp, hp, wb, finished)
+    | I_STORE p -> heap.(env+p) <- stack_head; ((sp-1, env, pc, fp), gp, hp, wb, finished)
     | I_FETCH p -> stack.(sp) <- (env_fetch (env, p)); ((sp+1, env, pc, fp), gp, hp, wb, finished)
     | I_PUSH v -> stack.(sp) <- v; ((sp+1, env, pc, fp), gp, hp, wb, finished)
     | I_POP () ->
-        let r = stack.(sp-1) in
+        let r = stack_head in
         if sp-1 = 0 then
           (print_value r; print_newline (); (frame, gp, hp, wb, true))
         else ((sp-1, env, pc, fp), gp, hp, wb, finished)
 
     | I_CALL n (* arity *) ->
-        let v = stack.(sp-1) in 
+        let v = stack_head in 
         match v with
         | Prim pt ->
-          let res =
-            match pt with
-            | P_ADD () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) + get_int_from_stack(sp-3))
-            | P_SUB () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) - get_int_from_stack(sp-3))
-            | P_MUL () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) * get_int_from_stack(sp-3))
-            | P_DIV () -> check_arity (n, 2); Int (get_int_from_stack(sp-2) / get_int_from_stack(sp-3))
-            | P_POW () -> check_arity (n, 2); Int (power(get_int_from_stack(sp-2), get_int_from_stack(sp-3), 1))
-            | P_EQ () -> check_arity (n, 2); Bool (equality (stack.(sp-2), stack.(sp-3)))
-            | P_LT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-2) < get_int_from_stack(sp-3))
-            | P_GT () -> check_arity (n, 2); Bool (get_int_from_stack(sp-2) > get_int_from_stack(sp-3))
-            end
+          let res = match pt with
+          | P_ADD () -> Int (get_int_from_stack(sp-2) + get_int_from_stack(sp-3))
+          | P_SUB () -> Int (get_int_from_stack(sp-2) - get_int_from_stack(sp-3))
+          | P_MUL () -> Int (get_int_from_stack(sp-2) * get_int_from_stack(sp-3))
+          | P_DIV () -> Int (get_int_from_stack(sp-2) / get_int_from_stack(sp-3))
+          | P_POW () -> Int (power(get_int_from_stack(sp-2), get_int_from_stack(sp-3), 1))
+          | P_EQ () -> Bool (equality (stack.(sp-2), stack.(sp-3)))
+          | P_LT () -> Bool (get_int_from_stack(sp-2) < get_int_from_stack(sp-3))
+          | P_GT () -> Bool (get_int_from_stack(sp-2) > get_int_from_stack(sp-3))
+          end
           in
           (stack.(sp-n-1) <- res;
           ((sp-n, env, pc, fp), gp, hp, wb, finished))
@@ -198,7 +192,7 @@ let vm_run_instr (state : vm_state) : vm_state =
 
     | I_JUMP p -> ((sp, env, p-1, fp), gp, hp, wb, finished)
     | I_JTRUE ptr1 ->
-        match stack.(sp-1) with
+        match stack_head with
         | Bool condi ->
             if condi then
               ((sp-1, env, ptr1-1, fp), gp, hp, wb, finished)
@@ -207,7 +201,7 @@ let vm_run_instr (state : vm_state) : vm_state =
         | _ -> fatal_error("jtrue on non boolean")
         end
     | I_JFALSE ptr2 ->
-        match stack.(sp-1) with
+        match stack_head with
         | Bool condi ->
             if not condi then
               ((sp-1, env, ptr2-1, fp), gp, hp, wb, finished)
@@ -218,17 +212,16 @@ let vm_run_instr (state : vm_state) : vm_state =
 
     | I_PUSH_FUN p -> (stack.(sp) <- Closure(p, env); ((sp+1, env, pc, fp), gp, hp, wb, finished))
     | I_RETURN () ->
-        let return_val = stack.(sp-1)
-        and old_frame = frames.(fp) in
+        let old_frame = frames.(fp) in
         let (o_sp, o_env, o_pc, o_fp) = old_frame in
-        stack.(o_sp) <- return_val;
+        stack.(o_sp) <- stack_head;
         ((o_sp+1, o_env, o_pc, o_fp), gp, hp, wb, finished)
   end
 ;;
 
 (* exécution d'un programme (stocké dans le tableau global [bytecode] *)
 let rec vm_run_code ((state,debug) : vm_state * bool) : unit =
-  (
+  ( (* affichage de l'état de la VM *)
     if debug then
       let (frame,gp,hp,write_buf,finished) = state in
       let (sp,env,pc,fp) = frame in
@@ -238,7 +231,7 @@ let rec vm_run_code ((state,debug) : vm_state * bool) : unit =
       print_vm_state state;
       print_newline ()
     else ()
-  ); (* affichage de l'état de la VM *)
+  );
   let (frame,gp,hp,write_buf,finished) = vm_run_instr(state) in
   if finished then () else 
   let (sp,env,pc,fp) = frame in

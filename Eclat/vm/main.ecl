@@ -101,7 +101,7 @@ let display_end cy =
 
 let main debug =
   (** chargement du programme *)
-  let is_loaded = load bc_inc2 in
+  let is_loaded = load bc_var_local in
 
   let cy = counter (is_loaded) in
 

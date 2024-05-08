@@ -135,6 +135,24 @@ let bc_inc2 () =
   ()
 ;; (* 44 *)
 
+let bc_multiple_add () =
+  code.(0) <- I_PUSH (Int 5);
+  code.(1) <- I_PUSH (Int 4);
+  code.(2) <- I_PUSH (Int 3);
+  code.(3) <- I_PUSH (Int 2);
+  code.(4) <- I_PUSH (Int 1);
+  code.(5) <- I_PUSH (Prim (P_ADD()));
+  code.(6) <- I_CALL (2);
+  code.(7) <- I_PUSH (Prim (P_ADD()));
+  code.(8) <- I_CALL (2);
+  code.(9) <- I_PUSH (Prim (P_ADD()));
+  code.(10) <- I_CALL (2);
+  code.(11) <- I_PUSH (Prim (P_ADD()));
+  code.(12) <- I_CALL (2);
+  code.(13) <- I_POP();
+  ()
+;; (* 15 *)
+
 let bc_multiple_env () =
   code.(0) <- I_GALLOC();
   code.(1) <- I_PUSH (Int 10);
