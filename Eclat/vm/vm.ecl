@@ -137,16 +137,20 @@ let vm_run_instr (state : vm_state) : vm_state =
   let (frame, gp, hp, wb, finished) = state in
   let (sp, env, pc, fp) = frame in
   let (wb_should_write, (wb_ptr, wb_val)) = wb in
+
   let instr = code.(pc)
   and stack_head = if sp = 0 then (Bool false) else (stack.(sp-1))
-  and () = (if wb_should_write then globals.(wb_ptr) <- wb_val else ()) in
+  and wb = (if wb_should_write then
+              (globals.(wb_ptr) <- wb_val; (false, (0, Nil())))
+            else wb)
+  in
   match instr with
     | I_GALLOC () ->
         if gp+1 > global_size then fatal_error("Globals memory full")
         else (frame, gp+1, hp, wb, finished)
     | I_GSTORE p ->
         let new_wb = (true, (p, stack_head)) in
-        globals.(p) <- stack_head; ((sp-1, env, pc, fp), gp, hp, new_wb, finished)
+        ((sp-1, env, pc, fp), gp, hp, new_wb, finished)
     | I_GFETCH p -> stack.(sp) <- globals.(p); ((sp+1, env, pc, fp), gp, hp, wb, finished)
     | I_STORE p -> heap.(env+p) <- stack_head; ((sp-1, env, pc, fp), gp, hp, wb, finished)
     | I_FETCH p -> stack.(sp) <- (env_fetch (env, p)); ((sp+1, env, pc, fp), gp, hp, wb, finished)
