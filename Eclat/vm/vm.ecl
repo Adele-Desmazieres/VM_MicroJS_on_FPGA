@@ -63,16 +63,14 @@ let equality((v1, v2): value * value) : bool =
 
 let rec env_fetch((env, offset):  ptr * ptr) : value =
   let curr = heap.(env) in
-  if offset = 0 then
-    match curr with
-    | Header other_env -> env_fetch (other_env, 0)
-    | _ -> curr
-    end
-  else
-    match curr with
-    | Header other_env -> env_fetch (other_env, offset)
-    | _ -> env_fetch (env+1, offset-1)
-    end
+  match curr with
+  | Header (n, other_env) ->
+      if offset >= n then 
+        env_fetch(other_env, offset - n)
+      else
+        heap.(env + offset + 1)
+  | _ -> curr
+  end
 ;;
 
 (* fonctions déboggage *)
@@ -203,10 +201,10 @@ let vm_run_instr (state : vm_state) : vm_state =
               fatal_error("not enough heap memory")
             else (
               let new_env = hp in
-              for i = 0 to n-1 do
-                heap.(new_env+i) <- stack.(sp-i-2)
+              heap.(new_env) <- Header (n, closue_env);
+              for i = 1 to n do
+                heap.(new_env+i) <- stack.(sp-i-1)
               done;
-              heap.(new_env + n) <- Header closue_env;
               let new_sp = sp-n-1 in
               let new_fp = fp+1 in
               frames.(fp) <- (new_sp, env, pc, fp);

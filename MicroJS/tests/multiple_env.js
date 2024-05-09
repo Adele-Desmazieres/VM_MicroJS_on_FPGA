@@ -11,4 +11,4 @@ function test1 (n1, n2, n3) {
   return test2(n1 + n2 + n3 + x + y + z);
 }
 
-test1(20, 20, 20);
+test1(20, 30, 40);

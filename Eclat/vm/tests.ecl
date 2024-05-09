@@ -214,14 +214,14 @@ let bc_multiple_env () =
   code.(57) <- I_RETURN();
   code.(58) <- I_PUSH_FUN (16);
   code.(59) <- I_GSTORE 2;
-  code.(60) <- I_PUSH (Int 20);
-  code.(61) <- I_PUSH (Int 20);
+  code.(60) <- I_PUSH (Int 40);
+  code.(61) <- I_PUSH (Int 30);
   code.(62) <- I_PUSH (Int 20);
   code.(63) <- I_GFETCH 2;
   code.(64) <- I_CALL (3);
   code.(65) <- I_POP();
   ()
-;; (* 130 *)
+;; (* 160 *)
 
 let bc_var_local () =
   code.(0) <- I_PUSH (Int 10);
