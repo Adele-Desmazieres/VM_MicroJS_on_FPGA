@@ -382,7 +382,7 @@ let bc_locals_globals () =
   
 let bc_multiple_env2 () =
   code.(0) <- I_GALLOC();
-  code.(1) <- I_PUSH (Int 100);
+  code.(1) <- I_PUSH (Int 2);
   code.(2) <- I_GSTORE 0;
   code.(3) <- I_GALLOC();
   code.(4) <- I_JUMP 12;
@@ -448,4 +448,4 @@ let bc_multiple_env2 () =
   code.(64) <- I_CALL (3);
   code.(65) <- I_POP();
   () 
-;;
+;; (* 212 *)
