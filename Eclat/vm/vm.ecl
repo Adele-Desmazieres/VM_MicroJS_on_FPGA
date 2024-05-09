@@ -209,7 +209,7 @@ let vm_run_instr (state : vm_state) : vm_state =
               heap.(new_env + n) <- Header closue_env;
               let new_sp = sp-n-1 in
               let new_fp = fp+1 in
-              frames.(new_fp) <- (new_sp, env, pc, fp);
+              frames.(fp) <- (new_sp, env, pc, fp);
               let new_frame = (new_sp, new_env, closue_pc-1, new_fp) in
               (new_frame, gp, new_hp, wb, finished)
             )
@@ -238,7 +238,7 @@ let vm_run_instr (state : vm_state) : vm_state =
 
     | I_PUSH_FUN p -> (stack.(sp) <- Closure(p, env); ((sp+1, env, pc, fp), gp, hp, wb, finished))
     | I_RETURN () ->
-        let old_frame = frames.(fp) in
+        let old_frame = frames.(fp-1) in
         let (o_sp, o_env, o_pc, o_fp) = old_frame in
         stack.(o_sp) <- stack_head;
         ((o_sp+1, o_env, o_pc, o_fp), gp, hp, wb, finished)
