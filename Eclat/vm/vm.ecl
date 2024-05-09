@@ -79,18 +79,18 @@ let rec env_fetch((env, offset):  ptr * ptr) : value =
 let print_instr (instruction : instr) : unit =
   match instruction with
   | I_GALLOC _ -> print_string "galloc"
-  | I_GSTORE _ -> print_string "gstore"
-  | I_GFETCH _ -> print_string "gfetch"
-  | I_STORE _ -> print_string "store"
-  | I_FETCH _ -> print_string "fetch"
-  | I_PUSH _ -> print_string "push"
-  | I_PUSH_FUN _ -> print_string "push_fun"
+  | I_GSTORE i -> print_string "gstore "; print_int i
+  | I_GFETCH i -> print_string "gfetch "; print_int i
+  | I_STORE i -> print_string "store "; print_int i
+  | I_FETCH i -> print_string "fetch "; print_int i
+  | I_PUSH v -> print_string "push "; print_value v
+  | I_PUSH_FUN l -> print_string "push_fun "; print_int l
   | I_POP _ -> print_string "pop"
-  | I_CALL _ -> print_string "call"
+  | I_CALL n -> print_string "call "; print_int n
   | I_RETURN _ -> print_string "return"
-  | I_JUMP _ -> print_string "jump"
-  | I_JTRUE _ -> print_string "jtrue"
-  | I_JFALSE _ -> print_string "jfalse"
+  | I_JUMP l -> print_string "jump "; print_int l
+  | I_JTRUE l -> print_string "jtrue "; print_int l
+  | I_JFALSE l -> print_string "jfalse "; print_int l
   end
 ;;
 
@@ -98,6 +98,15 @@ let print_stack (sp) : unit =
   print_string "Stack   : ";
   for i = 0 to (sp-1) do
     print_value (stack.(i));
+    print_string " "
+  done;
+  print_newline ()
+;;
+
+let print_frames (fp) : unit =
+  print_string "Frames  : ";
+  for i = 0 to (fp-1) do
+    print_frame (frames.(i));
     print_string " "
   done;
   print_newline ()
@@ -112,11 +121,20 @@ let print_heap (hp) : unit =
   print_newline ()
 ;;
 
-let print_globals (gp) : unit =
+let print_globals ((gp,wb)) : unit =
   print_string "Globals : ";
+  let (wb_should_write, (wb_ptr, wb_val)) = wb in
   for i = 0 to (gp-1) do
-    print_value (globals.(i));
-    print_string " "
+    if (wb_should_write & (wb_ptr = i)) 
+    then (
+      print_string "(" ;  
+      print_value wb_val;
+      print_string ") "    
+    )
+    else (
+      print_value (globals.(i));
+      print_string " "
+    )
   done;
   print_newline ()
 ;;
@@ -233,9 +251,10 @@ let rec vm_run_code ((state,debug) : vm_state * bool) : unit =
     if debug then
       let (frame,gp,hp,write_buf,finished) = state in
       let (sp,env,pc,fp) = frame in
-      print_globals gp;
+      print_globals (gp, write_buf);
       print_stack sp;
       print_heap hp;
+      print_frames fp;
       print_vm_state state;
       print_newline ()
     else ()

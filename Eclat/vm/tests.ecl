@@ -254,3 +254,88 @@ let bc_while () =
   ()
 ;; (* 10 *)
 
+let bc_sub () =
+  code.(0) <- I_PUSH (Int 1);
+  code.(1) <- I_PUSH (Int 42);
+  code.(2) <- I_PUSH (Prim (P_SUB()));
+  code.(3) <- I_CALL (2);
+  code.(4) <- I_POP();
+  () 
+;; (* 41 *)
+
+let bc_locals_globals () =
+  code.(0) <- I_GALLOC();
+  code.(1) <- I_PUSH (Int 10);
+  code.(2) <- I_GSTORE 0;
+  code.(3) <- I_PUSH (Int 20);
+  code.(4) <- I_JUMP 71;
+  code.(5) <- I_GALLOC();
+  code.(6) <- I_JUMP 30;
+  code.(7) <- I_PUSH (Int 60);
+  code.(8) <- I_FETCH 0;
+  code.(9) <- I_PUSH (Prim (P_ADD()));
+  code.(10) <- I_CALL (2);
+  code.(11) <- I_JUMP 25;
+  code.(12) <- I_FETCH 2;
+  code.(13) <- I_FETCH 0;
+  code.(14) <- I_FETCH 2;
+  code.(15) <- I_GFETCH 0;
+  code.(16) <- I_PUSH (Prim (P_ADD()));
+  code.(17) <- I_CALL (2);
+  code.(18) <- I_PUSH (Prim (P_ADD()));
+  code.(19) <- I_CALL (2);
+  code.(20) <- I_PUSH (Prim (P_ADD()));
+  code.(21) <- I_CALL (2);
+  code.(22) <- I_RETURN();
+  code.(23) <- I_PUSH (Nil());
+  code.(24) <- I_RETURN();
+  code.(25) <- I_PUSH_FUN (12);
+  code.(26) <- I_CALL (1);
+  code.(27) <- I_POP();
+  code.(28) <- I_PUSH (Nil());
+  code.(29) <- I_RETURN();
+  code.(30) <- I_PUSH_FUN (7);
+  code.(31) <- I_GSTORE 1;
+  code.(32) <- I_GALLOC();
+  code.(33) <- I_PUSH (Int 30);
+  code.(34) <- I_GSTORE 2;
+  code.(35) <- I_GALLOC();
+  code.(36) <- I_JUMP 56;
+  code.(37) <- I_GALLOC();
+  code.(38) <- I_PUSH (Int 50);
+  code.(39) <- I_GSTORE 4;
+  code.(40) <- I_FETCH 0;
+  code.(41) <- I_GFETCH 2;
+  code.(42) <- I_PUSH (Prim (P_ADD()));
+  code.(43) <- I_CALL (2);
+  code.(44) <- I_JUMP 51;
+  code.(45) <- I_FETCH 0;
+  code.(46) <- I_GFETCH 1;
+  code.(47) <- I_CALL (1);
+  code.(48) <- I_RETURN();
+  code.(49) <- I_PUSH (Nil());
+  code.(50) <- I_RETURN();
+  code.(51) <- I_PUSH_FUN (45);
+  code.(52) <- I_CALL (1);
+  code.(53) <- I_POP();
+  code.(54) <- I_PUSH (Nil());
+  code.(55) <- I_RETURN();
+  code.(56) <- I_PUSH_FUN (37);
+  code.(57) <- I_GSTORE 3;
+  code.(58) <- I_PUSH (Int 40);
+  code.(59) <- I_JUMP 66;
+  code.(60) <- I_FETCH 0;
+  code.(61) <- I_GFETCH 3;
+  code.(62) <- I_CALL (1);
+  code.(63) <- I_POP();
+  code.(64) <- I_PUSH (Nil());
+  code.(65) <- I_RETURN();
+  code.(66) <- I_PUSH_FUN (60);
+  code.(67) <- I_CALL (1);
+  code.(68) <- I_POP();
+  code.(69) <- I_PUSH (Nil());
+  code.(70) <- I_RETURN();
+  code.(71) <- I_PUSH_FUN (5);
+  code.(72) <- I_CALL (1);
+  code.(73) <- I_POP();
+  () ;; (* ======================================== *)
