@@ -100,7 +100,7 @@ let display_end cy =
 
 let main debug =
   (* chargement du programme *)
-  let is_loaded = load bc_delta in
+  let is_loaded = load bc_multiple_env in
 
   let cy = counter (is_loaded) in
 
