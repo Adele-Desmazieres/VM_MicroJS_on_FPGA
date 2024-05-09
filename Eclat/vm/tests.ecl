@@ -376,4 +376,76 @@ let bc_locals_globals () =
   code.(71) <- I_PUSH_FUN (5);
   code.(72) <- I_CALL (1);
   code.(73) <- I_POP();
-  () ;; (* ======================================== *)
+  () 
+;; (* ======================================== *)
+
+  
+let bc_multiple_env2 () =
+  code.(0) <- I_GALLOC();
+  code.(1) <- I_PUSH (Int 100);
+  code.(2) <- I_GSTORE 0;
+  code.(3) <- I_GALLOC();
+  code.(4) <- I_JUMP 12;
+  code.(5) <- I_FETCH 0;
+  code.(6) <- I_GFETCH 0;
+  code.(7) <- I_PUSH (Prim (P_ADD()));
+  code.(8) <- I_CALL (2);
+  code.(9) <- I_RETURN();
+  code.(10) <- I_PUSH (Nil());
+  code.(11) <- I_RETURN();
+  code.(12) <- I_PUSH_FUN (5);
+  code.(13) <- I_GSTORE 1;
+  code.(14) <- I_GALLOC();
+  code.(15) <- I_JUMP 58;
+  code.(16) <- I_PUSH (Int 10);
+  code.(17) <- I_JUMP 53;
+  code.(18) <- I_PUSH (Int 20);
+  code.(19) <- I_JUMP 48;
+  code.(20) <- I_PUSH (Int 30);
+  code.(21) <- I_JUMP 43;
+  code.(22) <- I_FETCH 0;
+  code.(23) <- I_FETCH 1;
+  code.(24) <- I_FETCH 2;
+  code.(25) <- I_FETCH 5;
+  code.(26) <- I_FETCH 4;
+  code.(27) <- I_FETCH 3;
+  code.(28) <- I_PUSH (Prim (P_ADD()));
+  code.(29) <- I_CALL (2);
+  code.(30) <- I_PUSH (Prim (P_ADD()));
+  code.(31) <- I_CALL (2);
+  code.(32) <- I_PUSH (Prim (P_ADD()));
+  code.(33) <- I_CALL (2);
+  code.(34) <- I_PUSH (Prim (P_ADD()));
+  code.(35) <- I_CALL (2);
+  code.(36) <- I_PUSH (Prim (P_ADD()));
+  code.(37) <- I_CALL (2);
+  code.(38) <- I_GFETCH 1;
+  code.(39) <- I_CALL (1);
+  code.(40) <- I_RETURN();
+  code.(41) <- I_PUSH (Nil());
+  code.(42) <- I_RETURN();
+  code.(43) <- I_PUSH_FUN (22);
+  code.(44) <- I_CALL (1);
+  code.(45) <- I_POP();
+  code.(46) <- I_PUSH (Nil());
+  code.(47) <- I_RETURN();
+  code.(48) <- I_PUSH_FUN (20);
+  code.(49) <- I_CALL (1);
+  code.(50) <- I_POP();
+  code.(51) <- I_PUSH (Nil());
+  code.(52) <- I_RETURN();
+  code.(53) <- I_PUSH_FUN (18);
+  code.(54) <- I_CALL (1);
+  code.(55) <- I_POP();
+  code.(56) <- I_PUSH (Nil());
+  code.(57) <- I_RETURN();
+  code.(58) <- I_PUSH_FUN (16);
+  code.(59) <- I_GSTORE 2;
+  code.(60) <- I_PUSH (Int 60);
+  code.(61) <- I_PUSH (Int 50);
+  code.(62) <- I_PUSH (Int 40);
+  code.(63) <- I_GFETCH 2;
+  code.(64) <- I_CALL (3);
+  code.(65) <- I_POP();
+  () 
+;;
