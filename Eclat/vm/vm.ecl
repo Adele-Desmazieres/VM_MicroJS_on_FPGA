@@ -61,15 +61,15 @@ let equality((v1, v2): value * value) : bool =
   end
 ;;
 
-let rec env_fetch((env, offset):  ptr * ptr) : value =
-  let curr = heap.(env) in
-  match curr with
+let rec env_fetch((hd, env, offset): value * ptr * ptr) : value =
+  match hd with
   | Header (n, other_env) ->
-      if offset >= n then 
-        env_fetch(other_env, offset - n)
+      if offset >= n then
+        let other_header = heap.(other_env) in
+        env_fetch(other_header, other_env, offset - n)
       else
         heap.(env + offset + 1)
-  | _ -> curr
+  | _ -> fatal_error "env_fetch called on non header"
   end
 ;;
 
@@ -159,7 +159,7 @@ let vm_run_instr (state : vm_state) : vm_state =
   and wb = (if wb_should_write then
               (globals.(wb_ptr) <- wb_val; (false, (0, Nil())))
             else wb)
-  in
+  and env_header = (heap.(env)) in
   match instr with
     | I_GALLOC () ->
         if gp+1 > global_size then fatal_error("Globals memory full")
@@ -169,7 +169,7 @@ let vm_run_instr (state : vm_state) : vm_state =
         ((sp-1, env, pc, fp), gp, hp, new_wb, finished)
     | I_GFETCH p -> stack.(sp) <- globals.(p); ((sp+1, env, pc, fp), gp, hp, wb, finished)
     | I_STORE p -> heap.(env+p) <- stack_head; ((sp-1, env, pc, fp), gp, hp, wb, finished)
-    | I_FETCH p -> stack.(sp) <- (env_fetch (env, p)); ((sp+1, env, pc, fp), gp, hp, wb, finished)
+    | I_FETCH p -> stack.(sp) <- (env_fetch (env_header, env, p)); ((sp+1, env, pc, fp), gp, hp, wb, finished)
     | I_PUSH v -> stack.(sp) <- v; ((sp+1, env, pc, fp), gp, hp, wb, finished)
     | I_POP () ->
         let r = stack_head in

@@ -48,8 +48,8 @@ let print_value(v:value) : unit =
       print_string "{";
       print_int p1; print_string ","; print_int p2; 
       print_string "}"
-  | Header (p, n) ->
+  | Header (env, n) ->
       print_string "h(";
-      print_int p;
+      print_int env; print_string ","; print_int n; 
       print_string ")"
   end ;;
