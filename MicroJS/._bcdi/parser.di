@@ -1,2 +1,0 @@
-parser.cmi : \
-    ast.cmo
